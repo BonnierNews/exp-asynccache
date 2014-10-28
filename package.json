@@ -1,0 +1,23 @@
+{
+  "name": "asynccache",
+  "version": "0.0.1",
+  "description": " A small async cache",
+  "main": "index.js",
+  "scripts": {
+    "test": " mocha test"
+  },
+  "keywords": [
+    "cache",
+    "async"
+  ],
+  "author": "Expressen AB",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^2.3.10",
+    "lru-cache-plus": "^2.5.0"
+  },
+  "devDependencies": {
+    "chai": "^1.9.2",
+    "mocha": "^2.0.1"
+  }
+}
