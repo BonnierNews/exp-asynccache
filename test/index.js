@@ -133,7 +133,7 @@ describe("AsyncCache", function () {
   describe("Handling of falsy values", function () {
     function setAndGet(key, value, done) {
       var cache = new AsyncCache();
-      cache.lookup("foo", function (resolve) {
+      cache.lookup(key, function (resolve) {
         resolve(null, value);
       }).then(function (cachedValue) {
         should.equal(value, cachedValue);
@@ -201,5 +201,17 @@ describe("AsyncCache", function () {
         done();
       });
     }).catch(done);
+  });
+
+  it("should handle being called recursively without setImmediate", function (done) {
+    var cache = new AsyncCache();
+
+    cache.lookup("foo", function (resolve) {
+      resolve(null, "value", -1);
+    }, function () {
+      cache.lookup("foo", function (resolve) {
+        resolve(null, "value", -1);
+      }, done);
+    });
   });
 });
