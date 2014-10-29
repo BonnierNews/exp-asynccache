@@ -28,9 +28,8 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
         delete self.pending[key];
       }
     };
-    var hit = self.cache.get(key);
-    if (hit !== undefined) {
-      hitFn(null, hit);
+    if (self.cache.has(key)) {
+      hitFn(null, self.cache.get(key));
     } else {
       if (self.pending[key]) {
         self.pending[key].push(hitFn);

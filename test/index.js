@@ -1,6 +1,7 @@
-require("chai").should();
-var AsyncCache = require("../"),
-    assert = require("assert");
+var Promise = require("bluebird");
+var should = require("chai").should();
+var AsyncCache = require("../");
+var assert = require("assert");
 
 describe("AsyncCache", function () {
   it("looks up value", function (done) {
@@ -8,6 +9,9 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return "123";
+      },
+      has: function(key) {
+        return key === "foo";
       }
     });
 
@@ -49,6 +53,10 @@ describe("AsyncCache", function () {
         key.should.eql("foo");
         return undefined;
       },
+      has: function(key) {
+        key.should.eql("foo");
+        return false;
+      },
       set: function (key, value) {
         key.should.eql("foo");
         storedValue = value;
@@ -69,6 +77,10 @@ describe("AsyncCache", function () {
         key.should.eql("foo");
         return undefined;
       },
+      has: function(key) {
+        key.should.eql("foo");
+        return false;
+      },
       set: function () {
         assert(false);
       }
@@ -88,6 +100,10 @@ describe("AsyncCache", function () {
       get: function (key) {
         assert.equal(key, "foo");
         return "123";
+      },
+      has: function(key) {
+        key.should.eql("foo");
+        return true;
       }
     });
 
@@ -110,6 +126,50 @@ describe("AsyncCache", function () {
     hit.then(function (value) {
       value.should.eql("baz");
       done();
+    });
+  });
+
+
+  describe("Handling of falsy values", function () {
+    function setAndGet(key, value, done) {
+      var cache = new AsyncCache();
+      cache.lookup("foo", function (resolve) {
+        resolve(null, value);
+      }).then(function (cachedValue) {
+        should.equal(value, cachedValue);
+        done();
+      });
+    }
+
+    it("should cache false", function (done) {
+      setAndGet("foo", false, done);
+    });
+    it("should cache undefined", function (done) {
+      setAndGet("foo", undefined, done);
+    });
+    it("should cache null", function (done) {
+      setAndGet("foo", null, done);
+    });
+    it("should cache 0", function (done) {
+      setAndGet("foo",  0, done);
+    });
+    it("should cache '0' ", function (done) {
+      setAndGet("foo", "0", done);
+    });
+  });
+  describe("Multiple requests", function () {
+    it("should handle pending with falsy values", function (done) {
+      var cache = new AsyncCache();
+      var one = cache.lookup("foo", function (resolve) {
+        setTimeout(function () {
+          resolve(null, null);
+        }, 0);
+      });
+      var two = cache.lookup("foo", function () { done("Should not go here"); });
+      Promise.all([one, two]).then(function (values) {
+         values.should.eql([null, null]);
+         done();
+      }).catch(done);
     });
   });
 });
