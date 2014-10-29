@@ -23,7 +23,7 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
       self.cache.set(key, hit, cacheHeader);
       if (self.pending[key]) {
         self.pending[key].forEach(function (callback) {
-          callback(null, hit);
+          setImmediate(callback, null, hit);
         });
         delete self.pending[key];
       }
