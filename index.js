@@ -2,16 +2,8 @@
 var Promise = require("bluebird");
 var LRU = require("lru-cache-plus");
 
-function buildCache() {
-  return new LRU({
-    length: function (v) {
-      return v && v.length || 1;
-    }
-  });
-}
-
 function AsyncCache(cache) {
-  this.cache = cache || buildCache();
+  this.cache = cache || new LRU();
   this.pending = {};
 }
 
