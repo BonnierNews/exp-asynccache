@@ -12,7 +12,15 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
   function inner(hitFn) {
     var resolvedCallback = function (err, hit, cacheHeader) {
       if (err) return hitFn(err);
-      self.cache.set(key, hit, cacheHeader);
+
+      // See https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#3-managing-arguments
+      var args = new Array(arguments.length);
+      args[0] = key;
+      for(var i = 1; i < args.length; ++i) {
+        args[i] = arguments[i];
+      }
+
+      self.cache.set.apply(self.cache, args);
       if (self.pending[key]) {
         self.pending[key].forEach(function (callback) {
           setImmediate(callback, null, hit);
