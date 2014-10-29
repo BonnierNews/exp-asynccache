@@ -157,19 +157,34 @@ describe("AsyncCache", function () {
       setAndGet("foo", "0", done);
     });
   });
-  describe("Multiple requests", function () {
-    it("should handle pending with falsy values", function (done) {
-      var cache = new AsyncCache();
-      var one = cache.lookup("foo", function (resolve) {
-        setTimeout(function () {
-          resolve(null, null);
-        }, 0);
-      });
-      var two = cache.lookup("foo", function () { done("Should not go here"); });
-      Promise.all([one, two]).then(function (values) {
-         values.should.eql([null, null]);
-         done();
-      }).catch(done);
+  it("should handle pending with falsy values", function (done) {
+    var cache = new AsyncCache();
+    var one = cache.lookup("foo", function (resolve) {
+      setTimeout(function () {
+        resolve(null, null);
+      }, 0);
     });
+    var two = cache.lookup("foo", function () { done("Should not go here"); });
+    Promise.all([one, two]).then(function (values) {
+       values.should.eql([null, null]);
+       done();
+    }).catch(done);
+  });
+
+  it("should not get cache if timed out", function (done) {
+    var cache = new AsyncCache();
+    cache.lookup("foo", function (resolve) {
+      resolve(null, "baz", 1);
+    }).then(function (val) {
+      val.should.eql("baz");
+      setTimeout(function () {
+        cache.lookup("foo", function (resolve) {
+          resolve(null, "bass");
+        }).then(function (val) {
+          val.should.eql("bass");
+          done();
+        });
+      }, 2);
+    }).catch(done);
   });
 });
