@@ -187,4 +187,19 @@ describe("AsyncCache", function () {
       }, 2);
     }).catch(done);
   });
+
+  it("should not get cache if maxAge is -1", function (done) {
+    var cache = new AsyncCache();
+    cache.lookup("foo", function (resolve) {
+      resolve(null, undefined, -1);
+    }).then(function (val) {
+      should.equal(val, undefined);
+      cache.lookup("foo", function (resolve) {
+        resolve(null, null);
+      }).then(function (val) {
+        should.equal(val, null);
+        done();
+      });
+    }).catch(done);
+  });
 });
