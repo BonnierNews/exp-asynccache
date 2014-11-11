@@ -1,17 +1,21 @@
 {
   "name": "asynccache",
-  "version": "1.0.0",
   "description": " A small async cache",
-  "main": "index.js",
+  "version": "1.0.0",
+  "author": "AB Kvällstidningen Expressen",
   "scripts": {
     "test": "mocha --reporter spec"
   },
+  "main": "index.js",
+  "repository": "git://github.com/ExpressenAB/exp-asynccache.git",
   "keywords": [
     "cache",
     "async"
   ],
-  "author": "Expressen AB",
-  "license": "ISC",
+  "license": {
+    "type": "MIT",
+    "url": "http://github.com/ExpressenAB/exp-asynccache/raw/master/LICENSE"
+  },
   "dependencies": {
     "bluebird": "^2.3.10",
     "lru-cache-plus": "^2.5.0"
@@ -21,6 +25,7 @@
     "mocha": "^2.0.1"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "LICENSE"
   ]
 }
