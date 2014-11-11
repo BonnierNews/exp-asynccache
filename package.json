@@ -1,5 +1,5 @@
 {
-  "name": "asynccache",
+  "name": "exp-asynccache",
   "description": " A small async cache",
   "version": "1.0.0",
   "author": "AB Kvällstidningen Expressen",
