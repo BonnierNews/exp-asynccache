@@ -3,6 +3,12 @@
   "description": " A small async cache",
   "version": "1.0.0",
   "author": "AB Kvällstidningen Expressen",
+  "contributors": [
+    "Anders Kindberg <ndrsbngtssn@yahoo.se>",
+    "Gabriel Falkenberg <gabriel.falkenberg@gmail.com>",
+    "Jens Carlén",
+    "Joel Abrahamsson"
+  ],
   "scripts": {
     "test": "mocha --reporter spec"
   },
