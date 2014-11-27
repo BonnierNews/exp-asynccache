@@ -96,6 +96,30 @@ describe("AsyncCache", function () {
     });
   });
 
+  it("handles pending requests when error happens", function (done) {
+    var target = new AsyncCache(new LRU());
+    var error = new Error("Could not find foo");
+    var errors = 0;
+
+    function hitFn(err, hit) {
+      assert.equal(err, error);
+      assert(!hit);
+      if (++errors === 2) {
+        done();
+      }
+    }
+
+    target.lookup("foo", function (resolvedCallback) {
+
+      // This request should be queued
+      target.lookup("foo", function () {
+        throw new Error("This resolveFn should not be called!");
+      }, hitFn);
+
+      setImmediate(resolvedCallback, error);
+    }, hitFn);
+  });
+
   it("can give promises instead", function (done) {
     var target = new AsyncCache({
       get: function (key) {
