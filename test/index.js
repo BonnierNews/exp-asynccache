@@ -166,6 +166,70 @@ describe("AsyncCache", function () {
     });
   });
 
+  it("calls hitFn asynchronously even when resolved synchronously", function (done) {
+    var cache = new AsyncCache();
+    var wasCalledAsync = false;
+
+    cache.lookup("foo", function (resolve) {
+      resolve(null, "sync");
+    }, function () {
+      assert(wasCalledAsync);
+      done();
+    });
+
+    wasCalledAsync = true;
+  });
+
+  it("calls hitFn asynchronously even for cache hits", function (done) {
+    var cache = new AsyncCache();
+
+    cache.lookup("foo", function (resolve) {
+      resolve(null, "baz");
+    }, function () {
+      // foo is now in cache
+      var wasCalledAsync = false;
+
+      cache.lookup("foo", function (resolve) {
+        resolve(null, "baz");
+      }, function () {
+        assert(wasCalledAsync);
+        done();
+      });
+
+      wasCalledAsync = true;
+    });
+  });
+
+  it("calls hitFn asynchronously for error", function (done) {
+    var cache = new AsyncCache();
+    var wasCalledAsync = false;
+
+    cache.lookup("foo", function (resolve) {
+      resolve(new Error());
+    }, function () {
+      // foo is now in cache
+      assert(wasCalledAsync);
+      done();
+    });
+
+    wasCalledAsync = true;
+  });
+
+  it("does not cache errors", function (done) {
+    var cache = new AsyncCache();
+
+    cache.lookup("foo", function (resolve) {
+      resolve(new Error());
+    }, function () {
+
+      cache.lookup("foo", function (resolve) {
+        resolve();
+      }, function (err) {
+        done(err);
+      });
+
+    });
+  });
 
   describe("Handling of falsy values", function () {
     function setAndGet(key, value, done) {

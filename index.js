@@ -40,7 +40,7 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
     }
 
     if (self.cache.has(key)) {
-      return hitFn(null, self.cache.get(key));
+      return setImmediate(hitFn, null, self.cache.get(key));
     }
 
     if (self.pending[key]) {

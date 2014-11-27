@@ -3,6 +3,9 @@ asynccache
 
 A async cache with a lookup function per key for node js with a different interface than async-cache.
 
+Errors are not cached and the callback function is always called asynchronously even if the value is resolved
+synchronously.
+
 Callback usage:
 
 ```javascript
