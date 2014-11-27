@@ -54,3 +54,26 @@ cache.lookup("foo", function (resolve) {
   resolve(null, "baz", 1000); // Let foo live for one second
 });
 ```
+
+## Warning
+
+Don't use more data from the closure than what is used to construct the cache key:
+
+```javascript
+
+var cache = new AsyncCache();
+
+function getPerson(name, location, callback) {
+
+  cache.lookup(name, function (resolve) { // <-- Only name is used
+
+    personRepo.get(name, location, resolve); // <-- Both name and location is used
+
+  }, callback);
+
+}
+```
+
+In the above example there might be several different objects returned by personRepo for the same name but with
+different locations but they are all cached only by the name. The correct code would be to construct the cache key
+from both name and location.
