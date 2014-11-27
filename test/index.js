@@ -2,7 +2,6 @@ var Promise = require("bluebird");
 var should = require("chai").should();
 var AsyncCache = require("../");
 var assert = require("assert");
-var LRU = require("lru-cache-plus");
 
 describe("AsyncCache", function () {
   it("looks up value", function (done) {
@@ -97,7 +96,7 @@ describe("AsyncCache", function () {
   });
 
   it("handles pending requests when error happens", function (done) {
-    var target = new AsyncCache(new LRU());
+    var target = new AsyncCache();
     var error = new Error("Could not find foo");
     var errors = 0;
 
@@ -143,7 +142,7 @@ describe("AsyncCache", function () {
   });
 
   it("rejects promise on resolve error", function (done) {
-    var target = new AsyncCache(new LRU());
+    var target = new AsyncCache();
 
     target.lookup("foo", function (resolve) {
       setImmediate(resolve, new Error("failure to resolve"));
