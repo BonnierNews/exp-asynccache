@@ -2,6 +2,7 @@ var Promise = require("bluebird");
 var should = require("chai").should();
 var AsyncCache = require("../");
 var assert = require("assert");
+var LRU = require("lru-cache-plus");
 
 describe("AsyncCache", function () {
   it("looks up value", function (done) {
@@ -113,6 +114,19 @@ describe("AsyncCache", function () {
 
     result.then(function (value) {
       assert.equal(value, "123");
+      done();
+    });
+  });
+
+  it("rejects promise on resolve error", function (done) {
+    var target = new AsyncCache(new LRU());
+
+    target.lookup("foo", function (resolve) {
+      setImmediate(resolve, new Error("failure to resolve"));
+    }).then(function () {
+      done(new Error("Shouldn't get here"));
+    }, function (error) {
+      assert(error);
       done();
     });
   });
