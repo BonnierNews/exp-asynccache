@@ -23,6 +23,25 @@ describe("AsyncCache", function () {
     });
   });
 
+  it("looks up value from promise", function (done) {
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.resolve("123");
+      },
+      has: function(key) {
+        return Promise.resolve(key === "foo");
+      }
+    });
+
+    target.lookup("foo", function () {
+      done(new Error("Shouldn't get here"));
+    }, function (err, hit) {
+      hit.should.eql("123");
+      done();
+    });
+  });
+
   it("caches nothing when maxAge is -1", function (done) {
     var LRU = require("lru-cache-plus");
     var cache = new LRU({
@@ -60,6 +79,34 @@ describe("AsyncCache", function () {
       set: function (key, value) {
         key.should.eql("foo");
         storedValue = value;
+      }
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456");
+    }, function () {
+      storedValue.should.eql("456");
+      done();
+    });
+  });
+
+  it("resolves value and sets to cache returning promise if no hit", function (done) {
+    var storedValue;
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.resolve(undefined);
+      },
+      has: function(key) {
+        key.should.eql("foo");
+        return Promise.resolve(false);
+      },
+      set: function (key, value) {
+        key.should.eql("foo");
+        return new Promise(function (resolve) {
+          storedValue = value;
+          resolve();
+        });
       }
     });
 
