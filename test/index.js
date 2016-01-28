@@ -9,9 +9,6 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return "123";
-      },
-      has: function(key) {
-        return key === "foo";
       }
     });
 
@@ -28,9 +25,6 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return Promise.resolve("123");
-      },
-      has: function(key) {
-        return Promise.resolve(key === "foo");
       }
     });
 
@@ -72,10 +66,6 @@ describe("AsyncCache", function () {
         key.should.eql("foo");
         return undefined;
       },
-      has: function(key) {
-        key.should.eql("foo");
-        return false;
-      },
       set: function (key, value) {
         key.should.eql("foo");
         storedValue = value;
@@ -96,10 +86,6 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return Promise.resolve(undefined);
-      },
-      has: function(key) {
-        key.should.eql("foo");
-        return Promise.resolve(false);
       },
       set: function (key, value) {
         key.should.eql("foo");
@@ -123,10 +109,6 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return undefined;
-      },
-      has: function(key) {
-        key.should.eql("foo");
-        return false;
       },
       set: function () {
         assert(false);
@@ -171,10 +153,6 @@ describe("AsyncCache", function () {
       get: function (key) {
         assert.equal(key, "foo");
         return "123";
-      },
-      has: function(key) {
-        key.should.eql("foo");
-        return true;
       }
     });
 
