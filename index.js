@@ -1,11 +1,17 @@
 "use strict";
 var Promise = require("bluebird");
 var LRU = require("lru-cache-plus");
+var EventEmitter = require("events");
+var util = require("util");
 
 function AsyncCache(cache) {
   this.cache = cache || new LRU();
   this.pending = {};
+
+  EventEmitter.call(this);
 }
+
+util.inherits(AsyncCache, EventEmitter);
 
 AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
   var self = this;
@@ -20,7 +26,7 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
 
   function inner(hitFn) {
 
-    function resolvedCallback(err, hit, cacheHeader) {
+    function resolvedCallback(err, hit) {
       if (err) {
         if (self.pending[key]) {
           self.pending[key].forEach(function (callback) {
@@ -38,7 +44,9 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
         args[i] = arguments[i];
       }
 
-      return set.apply(self.cache, args).then(function () {
+      return set.apply(self.cache, args).catch(function (err) {
+        self.emit("error", err);
+      }).then(function () {
         if (self.pending[key]) {
           self.pending[key].forEach(function (callback) {
             setImmediate(callback, null, hit);
@@ -48,7 +56,9 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
       });
     }
 
-    return get(key).then(function (value) {
+    return get(key).catch(function (err) {
+      self.emit("error", err);
+    }).then(function (value) {
       if (value !== null && value !== undefined) {
         return setImmediate(hitFn, null, value);
       }
