@@ -80,6 +80,53 @@ describe("AsyncCache", function () {
     });
   });
 
+  it("passes maxAge to cache", function (done) {
+    var setMaxAge;
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return undefined;
+      },
+      set: function (key, value, maxAge) {
+        key.should.eql("foo");
+        setMaxAge = maxAge;
+      }
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456", 1800);
+    }, function () {
+      setMaxAge.should.equal(1800);
+      done();
+    });
+  });
+
+  it("should emit cache errors", function (done) {
+    var onCallbacks = {};
+    var target = new AsyncCache({
+      on: function (event, callback) {
+        if (!onCallbacks[event]) {
+          onCallbacks[event] = [callback];
+        } else {
+          onCallbacks[event].push(callback);
+        }
+      },
+      emit: function (event, err) {
+        if (onCallbacks[event]) {
+          for (var i = 0; i < onCallbacks[event].length; i++) {
+            onCallbacks[event][i](err);
+          }
+        }
+      }
+    });
+    target.on("error", function (err) {
+      assert(err);
+      err.message.should.equal("error");
+      done();
+    });
+    target.cache.emit("error", new Error("error"));
+  });
+
   it("resolves value and sets to cache returning promise if no hit", function (done) {
     var storedValue;
     var target = new AsyncCache({

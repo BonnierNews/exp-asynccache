@@ -8,6 +8,12 @@ function AsyncCache(cache) {
   this.cache = cache || new LRU();
   this.pending = {};
 
+  if (typeof this.cache.on === "function") {
+    var self = this;
+    this.cache.on("error", function (err) {
+      self.emit("error", err);
+    });
+  }
   EventEmitter.call(this);
 }
 
