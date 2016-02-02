@@ -1,18 +1,38 @@
 "use strict";
 var Promise = require("bluebird");
 var LRU = require("lru-cache-plus");
+var EventEmitter = require("events");
+var util = require("util");
 
 function AsyncCache(cache) {
   this.cache = cache || new LRU();
   this.pending = {};
+
+  if (typeof this.cache.on === "function") {
+    var self = this;
+    this.cache.on("error", function (err) {
+      self.emit("error", err);
+    });
+  }
+  EventEmitter.call(this);
 }
+
+util.inherits(AsyncCache, EventEmitter);
 
 AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
   var self = this;
 
+  function get(key) {
+    return Promise.resolve(self.cache.get(key));
+  }
+
+  function set() {
+    return Promise.resolve(self.cache.set.apply(self.cache, arguments));
+  }
+
   function inner(hitFn) {
 
-    function resolvedCallback(err, hit, cacheHeader) {
+    function resolvedCallback(err, hit) {
       if (err) {
         if (self.pending[key]) {
           self.pending[key].forEach(function (callback) {
@@ -30,25 +50,32 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
         args[i] = arguments[i];
       }
 
-      self.cache.set.apply(self.cache, args);
-      if (self.pending[key]) {
-        self.pending[key].forEach(function (callback) {
-          setImmediate(callback, null, hit);
-        });
-        delete self.pending[key];
+      return set.apply(self.cache, args).catch(function (err) {
+        self.emit("error", err);
+      }).then(function () {
+        if (self.pending[key]) {
+          self.pending[key].forEach(function (callback) {
+            setImmediate(callback, null, hit);
+          });
+          delete self.pending[key];
+        }
+      });
+    }
+
+    return get(key).catch(function (err) {
+      self.emit("error", err);
+    }).then(function (value) {
+      if (value !== null && value !== undefined) {
+        return setImmediate(hitFn, null, value);
       }
-    }
 
-    if (self.cache.has(key)) {
-      return setImmediate(hitFn, null, self.cache.get(key));
-    }
-
-    if (self.pending[key]) {
-      self.pending[key].push(hitFn);
-    } else {
-      self.pending[key] = [hitFn];
-      resolveFn(resolvedCallback);
-    }
+      if (self.pending[key]) {
+        self.pending[key].push(hitFn);
+      } else {
+        self.pending[key] = [hitFn];
+        resolveFn(resolvedCallback);
+      }
+    });
   }
 
   if (hitFn) {

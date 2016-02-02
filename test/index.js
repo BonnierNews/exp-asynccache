@@ -9,9 +9,22 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return "123";
-      },
-      has: function(key) {
-        return key === "foo";
+      }
+    });
+
+    target.lookup("foo", function () {
+      done(new Error("Shouldn't get here"));
+    }, function (err, hit) {
+      hit.should.eql("123");
+      done();
+    });
+  });
+
+  it("looks up value from promise", function (done) {
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.resolve("123");
       }
     });
 
@@ -53,10 +66,6 @@ describe("AsyncCache", function () {
         key.should.eql("foo");
         return undefined;
       },
-      has: function(key) {
-        key.should.eql("foo");
-        return false;
-      },
       set: function (key, value) {
         key.should.eql("foo");
         storedValue = value;
@@ -71,15 +80,142 @@ describe("AsyncCache", function () {
     });
   });
 
-  it("deals with errors", function (done) {
+  it("passes maxAge to cache", function (done) {
+    var setMaxAge;
     var target = new AsyncCache({
       get: function (key) {
         key.should.eql("foo");
         return undefined;
       },
-      has: function(key) {
+      set: function (key, value, maxAge) {
         key.should.eql("foo");
-        return false;
+        setMaxAge = maxAge;
+      }
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456", 1800);
+    }, function () {
+      setMaxAge.should.equal(1800);
+      done();
+    });
+  });
+
+  it("should emit cache errors", function (done) {
+    var onCallbacks = {};
+    var target = new AsyncCache({
+      on: function (event, callback) {
+        if (!onCallbacks[event]) {
+          onCallbacks[event] = [callback];
+        } else {
+          onCallbacks[event].push(callback);
+        }
+      },
+      emit: function (event, err) {
+        if (onCallbacks[event]) {
+          for (var i = 0; i < onCallbacks[event].length; i++) {
+            onCallbacks[event][i](err);
+          }
+        }
+      }
+    });
+    target.on("error", function (err) {
+      assert(err);
+      err.message.should.equal("error");
+      done();
+    });
+    target.cache.emit("error", new Error("error"));
+  });
+
+  it("resolves value and sets to cache returning promise if no hit", function (done) {
+    var storedValue;
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.resolve(undefined);
+      },
+      set: function (key, value) {
+        key.should.eql("foo");
+        return new Promise(function (resolve) {
+          storedValue = value;
+          resolve();
+        });
+      }
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456");
+    }, function () {
+      storedValue.should.eql("456");
+      done();
+    });
+  });
+
+  it("resolves value and sets to cache if get-promise is rejected", function (done) {
+    var storedValue;
+    var err;
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.reject(new Error("error"));
+      },
+      set: function (key, value) {
+        key.should.eql("foo");
+        return new Promise(function (resolve) {
+          storedValue = value;
+          resolve();
+        });
+      }
+    });
+
+    target.on("error", function (e) {
+      err = e;
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456");
+    }, function () {
+      storedValue.should.eql("456");
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
+  it("resolves value even if set-promise is rejected", function (done) {
+    var storedValue;
+    var err;
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.resolve(undefined);
+      },
+      set: function (key, value) {
+        key.should.eql("foo");
+        return new Promise(function (resolve, reject) {
+          storedValue = value;
+          reject(new Error("error"));
+        });
+      }
+    });
+
+    target.on("error", function (e) {
+      err = e;
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456");
+    }, function () {
+      storedValue.should.eql("456");
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
+  it("deals with errors", function (done) {
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return undefined;
       },
       set: function () {
         assert(false);
@@ -124,10 +260,6 @@ describe("AsyncCache", function () {
       get: function (key) {
         assert.equal(key, "foo");
         return "123";
-      },
-      has: function(key) {
-        key.should.eql("foo");
-        return true;
       }
     });
 
