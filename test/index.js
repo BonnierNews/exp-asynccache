@@ -9,6 +9,9 @@ describe("AsyncCache", function () {
       get: function (key) {
         key.should.eql("foo");
         return "123";
+      },
+      has: function(key) {
+        return key === "foo";
       }
     });
 
@@ -69,6 +72,9 @@ describe("AsyncCache", function () {
       set: function (key, value) {
         key.should.eql("foo");
         storedValue = value;
+      },
+      has: function(key) {
+        return key !== "foo";
       }
     });
 
@@ -90,6 +96,9 @@ describe("AsyncCache", function () {
       set: function (key, value, maxAge) {
         key.should.eql("foo");
         setMaxAge = maxAge;
+      },
+      has: function(key) {
+        return key !== "foo";
       }
     });
 
@@ -140,6 +149,9 @@ describe("AsyncCache", function () {
           storedValue = value;
           resolve();
         });
+      },
+      has: function(key) {
+        return key !== "foo";
       }
     });
 
@@ -165,6 +177,42 @@ describe("AsyncCache", function () {
           storedValue = value;
           resolve();
         });
+      },
+      has: function(key) {
+        return key !== "foo";
+      }
+    });
+
+    target.on("error", function (e) {
+      err = e;
+    });
+
+    target.lookup("foo", function (resolvedCallback) {
+      resolvedCallback(null, "456");
+    }, function () {
+      storedValue.should.eql("456");
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
+  it("resolves value and sets to cache if has-promise is rejected", function (done) {
+    var storedValue;
+    var err;
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return Promise.resolve(undefined);
+      },
+      set: function (key, value) {
+        key.should.eql("foo");
+        return new Promise(function (resolve) {
+          storedValue = value;
+          resolve();
+        });
+      },
+      has: function () {
+        return Promise.reject(new Error("error"));
       }
     });
 
@@ -219,6 +267,9 @@ describe("AsyncCache", function () {
       },
       set: function () {
         assert(false);
+      },
+      has: function(key) {
+        return key !== "foo";
       }
     });
 
