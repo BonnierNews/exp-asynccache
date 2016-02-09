@@ -4,6 +4,230 @@ var AsyncCache = require("../");
 var assert = require("assert");
 
 describe("AsyncCache", function () {
+  it("has value as callback", function (done) {
+    var target = new AsyncCache({
+      has: function (key) {
+        key.should.eql("foo");
+        return true;
+      }
+    });
+
+    target.has("foo", function (err, exists) {
+      exists.should.eql(true);
+      done();
+    });
+  });
+
+  it("has value as promise", function (done) {
+    var target = new AsyncCache({
+      has: function (key) {
+        key.should.eql("foo");
+        return true;
+      }
+    });
+
+    target.has("foo").then(function (exists) {
+      exists.should.eql(true);
+      done();
+    });
+  });
+
+  it("handles has error", function (done) {
+    var target = new AsyncCache({
+      has: function () {
+        return Promise.reject(new Error("error"));
+      }
+    });
+
+    target.has("foo", function (err) {
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
+  it("gets value as callback", function (done) {
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return "123";
+      }
+    });
+
+    target.get("foo", function (err, hit) {
+      hit.should.eql("123");
+      done();
+    });
+  });
+
+  it("gets value as promise", function (done) {
+    var target = new AsyncCache({
+      get: function (key) {
+        key.should.eql("foo");
+        return "123";
+      }
+    });
+
+    target.get("foo").then(function (hit) {
+      hit.should.eql("123");
+      done();
+    });
+  });
+
+  it("handles get error", function (done) {
+    var target = new AsyncCache({
+      get: function () {
+        return Promise.reject(new Error("error"));
+      }
+    });
+
+    target.get("foo", function (err) {
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
+  it("sets value with callback", function (done) {
+    var setValue;
+    var target = new AsyncCache({
+      set: function (key, value, maxAge) {
+        setValue = {
+          key: key,
+          value: value,
+          maxAge: maxAge
+        };
+      }
+    });
+
+    target.set("foo", "123", 1000, function () {
+      setValue.key.should.eql("foo");
+      setValue.value.should.eql("123");
+      setValue.maxAge.should.eql(1000);
+      done();
+    });
+  });
+
+  it("sets value with maxAge as callback", function (done) {
+    var setValue;
+    var target = new AsyncCache({
+      set: function (key, value, maxAge) {
+        setValue = {
+          key: key,
+          value: value,
+          maxAge: maxAge
+        };
+      }
+    });
+
+    target.set("foo", "123", function () {
+      setValue.key.should.eql("foo");
+      setValue.value.should.eql("123");
+      assert(setValue.maxAge === null);
+      done();
+    });
+  });
+
+  it("sets value with promise", function (done) {
+    var setValue;
+    var target = new AsyncCache({
+      set: function (key, value, maxAge) {
+        setValue = {
+          key: key,
+          value: value,
+          maxAge: maxAge
+        };
+      }
+    });
+
+    target.set("foo", "123", 1000).then(function () {
+      setValue.key.should.eql("foo");
+      setValue.value.should.eql("123");
+      setValue.maxAge.should.eql(1000);
+      done();
+    });
+  });
+
+  it("handles set error", function (done) {
+    var target = new AsyncCache({
+      set: function () {
+        return Promise.reject(new Error("error"));
+      }
+    });
+
+    target.set("foo", "123", 1000, function (err) {
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
+  it("deletes with callback", function (done) {
+    var delKey;
+    var target = new AsyncCache({
+      del: function (key) {
+        delKey = key;
+      }
+    });
+
+    target.del("foo", function () {
+      delKey.should.eql("foo");
+      done();
+    });
+  });
+
+  it("deletes with promise", function (done) {
+    var delKey;
+    var target = new AsyncCache({
+      del: function (key) {
+        delKey = key;
+      }
+    });
+
+    target.del("foo").then(function () {
+      delKey.should.eql("foo");
+      done();
+    });
+  });
+
+  it("resets with callback", function (done) {
+    var wereReset = false;
+    var target = new AsyncCache({
+      reset: function () {
+        wereReset = true;
+      }
+    });
+
+    target.reset(function () {
+      wereReset.should.eql(true);
+      done();
+    });
+  });
+
+  it("resets with promise", function (done) {
+    var wereReset = false;
+    var target = new AsyncCache({
+      reset: function () {
+        wereReset = true;
+      }
+    });
+
+    target.reset().then(function () {
+      wereReset.should.eql(true);
+      done();
+    });
+  });
+
+  it("handles delete error", function (done) {
+    var target = new AsyncCache({
+      del: function () {
+        return Promise.reject(new Error("error"));
+      }
+    });
+
+    target.del("foo", function (err) {
+      err.message.should.equal("error");
+      done();
+    });
+  });
+
   it("looks up value", function (done) {
     var target = new AsyncCache({
       get: function (key) {

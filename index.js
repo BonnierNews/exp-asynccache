@@ -19,6 +19,82 @@ function AsyncCache(cache) {
 
 util.inherits(AsyncCache, EventEmitter);
 
+AsyncCache.prototype.get = function (key, callback) {
+  return Promise.resolve(this.cache.get(key)).then(function (data) {
+    if (typeof callback === "function") {
+      callback(null, data);
+    }
+    return data;
+  }, function (err) {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.has = function (key, callback) {
+  return Promise.resolve(this.cache.has(key)).then(function (exists) {
+    if (typeof callback === "function") {
+      callback(null, exists);
+    }
+    return exists;
+  }, function (err) {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.set = function (key, value, maxAge, callback) {
+  if (typeof maxAge === "function") {
+    callback = maxAge;
+    maxAge = null;
+  }
+  return Promise.resolve(this.cache.set(key, value, maxAge)).then(function () {
+    if (typeof callback === "function") {
+      callback();
+    }
+  }, function (err) {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.del = function (key, callback) {
+  return Promise.resolve(this.cache.del(key)).then(function () {
+    if (typeof callback === "function") {
+      callback();
+    }
+  }, function (err) {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.reset = function (callback) {
+  return Promise.resolve(this.cache.reset()).then(function () {
+    if (typeof callback === "function") {
+      callback();
+    }
+  }, function (err) {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
 AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
   var self = this;
 
@@ -26,8 +102,8 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
     return Promise.resolve(self.cache.get(key));
   }
 
-  function set() {
-    return Promise.resolve(self.cache.set.apply(self.cache, arguments));
+  function set(key, value, maxAge) {
+    return Promise.resolve(self.cache.set(key, value, maxAge));
   }
 
   function has() {
