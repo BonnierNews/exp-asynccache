@@ -49,7 +49,7 @@ var LRU = require("lru-cache-plus"); // any lru-cache compatible cache will do
 var cache = new AsyncCache(new LRU({
   max: 500,
   maxAge: 1000 * 60 * 60
-});
+}));
 ```
 
 The resolve function can take more arguments than error and key. It will pass these to the underlying cache's set
