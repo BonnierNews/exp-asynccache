@@ -14,6 +14,7 @@ synchronously.
 Callback usage:
 
 ```javascript
+var AsyncCache = require("exp-asynccache");
 var cache = new AsyncCache();
 
 cache.lookup("foo", function (resolve) {
@@ -27,6 +28,7 @@ cache.lookup("foo", function (resolve) {
 Promise usage:
 
 ```javascript
+var AsyncCache = require("exp-asynccache");
 var cache = new AsyncCache();
 
 var hit = cache.lookup("foo", function (resolve) {
@@ -41,6 +43,7 @@ hit.then(function (value) {
 By default a lru-cache-plus cache with default settings is used to store cached objects but you can provide your own.
 
 ```javascript
+var AsyncCache = require("exp-asynccache");
 var LRU = require("lru-cache-plus"); // any lru-cache compatible cache will do
 
 var cache = new AsyncCache(new LRU({
@@ -53,6 +56,7 @@ The resolve function can take more arguments than error and key. It will pass th
 method. So when using lru-cache-plus you can provide a max age per key:
 
 ```javascript
+var AsyncCache = require("exp-asynccache");
 var cache = new AsyncCache();
 
 cache.lookup("foo", function (resolve) {
@@ -65,7 +69,7 @@ cache.lookup("foo", function (resolve) {
 Don't use more data from the closure than what is used to construct the cache key:
 
 ```javascript
-
+var AsyncCache = require("exp-asynccache");
 var cache = new AsyncCache();
 
 function getPerson(name, location, callback) {
