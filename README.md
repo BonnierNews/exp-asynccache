@@ -64,6 +64,19 @@ cache.lookup("foo", function (resolve) {
 });
 ```
 
+## Cache interface
+
+The undelying cache should adhere to the same interface as LRUCache:
+
+```
+get(key)        -> lookup value. undefined return value indicates cache miss.
+set(key, value) -> set value
+has(key)        -> return true if key exists
+
+```
+
+If the cache impmlemntation is asynchronous, promises can be returned
+
 ## Warning
 
 Don't use more data from the closure than what is used to construct the cache key:

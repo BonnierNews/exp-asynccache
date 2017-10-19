@@ -106,10 +106,6 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
     return Promise.resolve(self.cache.set(key, value, maxAge));
   }
 
-  function has() {
-    return Promise.resolve(self.cache.has(key));
-  }
-
   function inner(hitFn) {
 
     function resolvedCallback(err, hit) {
@@ -144,18 +140,17 @@ AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
 
     return get(key).catch(function (err) {
       self.emit("error", err);
-      return null;
+      return undefined;
     }).then(function (value) {
-      if (value === null || value === undefined) {
-        return has().then(function (exists) {
-          return [exists, value];
-        });
+      if (value === undefined) {
+        return [false, value];
       }
       return [true, value];
     }).catch(function (err) {
       self.emit("error", err);
       return [false, null];
     }).then(function (arr) {
+
       var exists = arr[0];
       var value = arr[1];
 
