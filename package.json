@@ -23,12 +23,11 @@
     "url": "http://github.com/ExpressenAB/exp-asynccache/raw/master/LICENSE"
   },
   "dependencies": {
-    "bluebird": "^2.3.10",
     "lru-cache-plus": "^2.5.0"
   },
   "devDependencies": {
     "chai": "^1.9.2",
-    "mocha": "^2.0.1"
+    "mocha": "^6.2.0"
   },
   "files": [
     "index.js",
