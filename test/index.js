@@ -1,4 +1,3 @@
-var Promise = require("bluebird");
 var should = require("chai").should();
 var AsyncCache = require("../");
 var assert = require("assert");
