@@ -1,5 +1,4 @@
 "use strict";
-var Promise = require("bluebird");
 var LRU = require("lru-cache-plus");
 var EventEmitter = require("events");
 var util = require("util");
