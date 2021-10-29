@@ -11,9 +11,8 @@ class AsyncCache extends EventEmitter {
     this.pending = {};
 
     if (typeof this.cache.on === "function") {
-      const self = this;
       this.cache.on("error", (err) => {
-        self.emit("error", err);
+        this.emit("error", err);
       });
     }
   }
@@ -92,75 +91,55 @@ class AsyncCache extends EventEmitter {
   }
 
   lookup(key, resolveFn, hitFn) {
-    const self = this;
-
-    function get(innerKey) {
-      return Promise.resolve(self.cache.get(innerKey));
-    }
-
-    function set(innerKey, value, maxAge) {
-      return Promise.resolve(self.cache.set(innerKey, value, maxAge));
-    }
-
-    function inner(innerHitFn) {
-      function resolvedCallback(err, hit) {
-        if (err) {
-          if (self.pending[key]) {
-            self.pending[key].forEach((callback) => {
-              setImmediate(callback, err);
-            });
-            delete self.pending[key];
-          }
-          return;
+    const resolvedCallback = async (...args) => {
+      const [error, hit, ...rest] = args;
+      if (error) {
+        if (this.pending[key]) {
+          this.pending[key].forEach((callback) => {
+            setImmediate(callback, error);
+          });
+          delete this.pending[key];
         }
-
-        // See https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#3-managing-arguments
-        const args = new Array(arguments.length);
-        args[0] = key;
-        for (let i = 1; i < args.length; ++i) {
-          args[i] = arguments[i];
-        }
-
-        return set.apply(self.cache, args).catch((innerErr) => {
-          self.emit("error", innerErr);
-        }).then(() => {
-          if (self.pending[key]) {
-            self.pending[key].forEach((callback) => {
-              setImmediate(callback, null, hit);
-            });
-            delete self.pending[key];
-          }
-        });
+        return;
       }
 
-      return get(key).catch((err) => {
-        self.emit("error", err);
-        return undefined;
-      }).then((value) => {
-        if (value === undefined) {
-          return [false, value];
-        }
-        return [true, value];
-      }).catch((err) => {
-        self.emit("error", err);
-        return [false, null];
-      }).then((arr) => {
+      let value;
+      try {
+        value = await this.cache.set(key, hit, ...rest);
+      } catch (err) {
+        this.emit("error", err);
+      }
 
-        const exists = arr[0];
-        const value = arr[1];
+      if (this.pending[key]) {
+        this.pending[key].forEach((callback) => {
+          setImmediate(callback, null, hit);
+        });
+        delete this.pending[key];
+      }
 
-        if (exists) {
-          return setImmediate(innerHitFn, null, value);
-        }
+      return value;
+    };
 
-        if (self.pending[key]) {
-          self.pending[key].push(innerHitFn);
-        } else {
-          self.pending[key] = [innerHitFn];
-          resolveFn(resolvedCallback);
-        }
-      });
-    }
+    const inner = async (innerHitFn) => {
+      let value;
+      try {
+        value = await this.cache.get(key);
+      } catch (err) {
+        this.emit("error", err);
+      }
+
+      const exists = value !== undefined;
+      if (exists) {
+        return setImmediate(innerHitFn, null, value);
+      }
+
+      if (this.pending[key]) {
+        this.pending[key].push(innerHitFn);
+      } else {
+        this.pending[key] = [innerHitFn];
+        resolveFn(resolvedCallback);
+      }
+    };
 
     if (hitFn) {
       inner(hitFn);

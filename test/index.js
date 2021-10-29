@@ -522,7 +522,6 @@ describe("AsyncCache", () => {
     }
 
     target.lookup("foo", (resolvedCallback) => {
-
       // This request should be queued
       target.lookup("foo", () => {
         throw new Error("This resolveFn should not be called!");
