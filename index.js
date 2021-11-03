@@ -1,157 +1,181 @@
 "use strict";
-
 const LRU = require("lru-cache-plus");
 const EventEmitter = require("events");
+const util = require("util");
 
-class AsyncCache extends EventEmitter {
-  constructor(cache) {
-    super();
+function AsyncCache(cache) {
+  this.cache = cache || new LRU();
+  this.pending = {};
 
-    this.cache = cache || new LRU();
-    this.pending = {};
+  if (typeof this.cache.on === "function") {
+    const self = this;
+    this.cache.on("error", (err) => {
+      self.emit("error", err);
+    });
+  }
+  EventEmitter.call(this);
+}
 
-    if (typeof this.cache.on === "function") {
-      this.cache.on("error", (err) => {
-        this.emit("error", err);
-      });
+util.inherits(AsyncCache, EventEmitter);
+
+AsyncCache.prototype.get = function (key, callback) {
+  return Promise.resolve(this.cache.get(key)).then((data) => {
+    if (typeof callback === "function") {
+      callback(null, data);
     }
+    return data;
+  }, (err) => {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.has = function (key, callback) {
+  return Promise.resolve(this.cache.has(key)).then((exists) => {
+    if (typeof callback === "function") {
+      callback(null, exists);
+    }
+    return exists;
+  }, (err) => {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.set = function (key, value, maxAge, callback) {
+  if (typeof maxAge === "function") {
+    callback = maxAge;
+    maxAge = null;
+  }
+  return Promise.resolve(this.cache.set(key, value, maxAge)).then(() => {
+    if (typeof callback === "function") {
+      callback();
+    }
+  }, (err) => {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.del = function (key, callback) {
+  return Promise.resolve(this.cache.del(key)).then(() => {
+    if (typeof callback === "function") {
+      callback();
+    }
+  }, (err) => {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.reset = function (callback) {
+  return Promise.resolve(this.cache.reset()).then(() => {
+    if (typeof callback === "function") {
+      callback();
+    }
+  }, (err) => {
+    if (typeof callback === "function") {
+      callback(err);
+    } else {
+      throw err;
+    }
+  });
+};
+
+AsyncCache.prototype.lookup = function (key, resolveFn, hitFn) {
+  const self = this;
+
+  function get(key) {
+    return Promise.resolve(self.cache.get(key));
   }
 
-
-  async get(key, callback) {
-    try {
-      const data = await this.cache.get(key);
-      if (typeof callback === "function") {
-        return callback(null, data);
-      }
-      return data;
-    } catch (err) {
-      if (typeof callback === "function") {
-        return callback(err);
-      }
-    }
+  function set(key, value, maxAge) {
+    return Promise.resolve(self.cache.set(key, value, maxAge));
   }
 
-  async has(key, callback) {
-    try {
-      const exists = await this.cache.has(key);
-      if (typeof callback === "function") {
-        return callback(null, exists);
-      }
-      return exists;
-    } catch (err) {
-      if (typeof callback === "function") {
-        return callback(err);
-      }
-    }
-  }
+  function inner(hitFn) {
 
-  async set(key, value, maxAge, callback) {
-    if (typeof maxAge === "function") {
-      callback = maxAge;
-      maxAge = null;
-    }
-
-    try {
-      await this.cache.set(key, value, maxAge);
-      if (typeof callback === "function") {
-        return callback();
-      }
-    } catch (err) {
-      if (typeof callback === "function") {
-        return callback(err);
-      }
-    }
-  }
-
-  async del(key, callback) {
-    try {
-      await this.cache.del(key);
-      if (typeof callback === "function") {
-        return callback();
-      }
-    } catch (err) {
-      if (typeof callback === "function") {
-        return callback(err);
-      }
-    }
-  }
-
-  async reset(callback) {
-    try {
-      await this.cache.reset();
-      if (typeof callback === "function") {
-        return callback();
-      }
-    } catch (err) {
-      if (typeof callback === "function") {
-        return callback(err);
-      }
-    }
-  }
-
-  lookup(key, resolveFn, hitFn) {
-    const resolvedCallback = async (...args) => {
-      const [error, hit, ...rest] = args;
-      if (error) {
-        if (this.pending[key]) {
-          this.pending[key].forEach((callback) => {
-            setImmediate(callback, error);
+    function resolvedCallback(err, hit) {
+      if (err) {
+        if (self.pending[key]) {
+          self.pending[key].forEach((callback) => {
+            setImmediate(callback, err);
           });
-          delete this.pending[key];
+          delete self.pending[key];
         }
         return;
       }
 
-      let value;
-      try {
-        value = await this.cache.set(key, hit, ...rest);
-      } catch (err) {
-        this.emit("error", err);
+      // See https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#3-managing-arguments
+      const args = new Array(arguments.length);
+      args[0] = key;
+      for (let i = 1; i < args.length; ++i) {
+        args[i] = arguments[i];
       }
 
-      if (this.pending[key]) {
-        this.pending[key].forEach((callback) => {
-          setImmediate(callback, null, hit);
-        });
-        delete this.pending[key];
-      }
-
-      return value;
-    };
-
-    const inner = async (innerHitFn) => {
-      let value;
-      try {
-        value = await this.cache.get(key);
-      } catch (err) {
-        this.emit("error", err);
-      }
-
-      const exists = value !== undefined;
-      if (exists) {
-        return setImmediate(innerHitFn, null, value);
-      }
-
-      if (this.pending[key]) {
-        this.pending[key].push(innerHitFn);
-      } else {
-        this.pending[key] = [innerHitFn];
-        resolveFn(resolvedCallback);
-      }
-    };
-
-    if (hitFn) {
-      inner(hitFn);
-    } else {
-      return new Promise((resolve, reject) => {
-        inner((err, hit) => {
-          if (err) return reject(err);
-          return resolve(hit);
-        });
+      return set.apply(self.cache, args).catch((err) => {
+        self.emit("error", err);
+      }).then(() => {
+        if (self.pending[key]) {
+          self.pending[key].forEach((callback) => {
+            setImmediate(callback, null, hit);
+          });
+          delete self.pending[key];
+        }
       });
     }
+
+    return get(key).catch((err) => {
+      self.emit("error", err);
+      return undefined;
+    }).then((value) => {
+      if (value === undefined) {
+        return [false, value];
+      }
+      return [true, value];
+    }).catch((err) => {
+      self.emit("error", err);
+      return [false, null];
+    }).then((arr) => {
+
+      const exists = arr[0];
+      const value = arr[1];
+
+      if (exists) {
+        return setImmediate(hitFn, null, value);
+      }
+
+      if (self.pending[key]) {
+        self.pending[key].push(hitFn);
+      } else {
+        self.pending[key] = [hitFn];
+        resolveFn(resolvedCallback);
+      }
+    });
   }
-}
+
+  if (hitFn) {
+    inner(hitFn);
+  } else {
+    return new Promise((resolve, reject) => {
+      inner((err, hit) => {
+        if (err) return reject(err);
+        return resolve(hit);
+      });
+    });
+  }
+};
 
 module.exports = AsyncCache;
