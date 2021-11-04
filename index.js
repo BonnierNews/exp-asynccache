@@ -1,6 +1,6 @@
 "use strict";
 
-const LRU = require("lru-cache-plus");
+const LRU = require("lru-cache");
 const EventEmitter = require("events");
 
 class AsyncCache extends EventEmitter {
