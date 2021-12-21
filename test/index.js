@@ -351,32 +351,6 @@ describe("AsyncCache", () => {
     });
   });
 
-  it("should emit cache errors", (done) => {
-    const onCallbacks = {};
-    const target = new AsyncCache({
-      on(event, callback) {
-        if (!onCallbacks[event]) {
-          onCallbacks[event] = [callback];
-        } else {
-          onCallbacks[event].push(callback);
-        }
-      },
-      emit(event, err) {
-        if (onCallbacks[event]) {
-          for (let i = 0; i < onCallbacks[event].length; i++) {
-            onCallbacks[event][i](err);
-          }
-        }
-      }
-    });
-    target.on("error", (err) => {
-      expect(err).to.be.instanceOf(Error);
-      expect(err.message).to.equal("error");
-      done();
-    });
-    target.cache.emit("error", new Error("error"));
-  });
-
   it("should count undefined as a cache miss and resolve", (done) => {
     let storedValue;
     const target = new AsyncCache({
@@ -636,6 +610,43 @@ describe("AsyncCache", () => {
         done(err);
       });
 
+    });
+  });
+
+  describe("events", () => {
+    let target;
+    beforeEach(() => {
+      const onCallbacks = {};
+      target = new AsyncCache({
+        on(event, callback) {
+          if (!onCallbacks[event]) {
+            onCallbacks[event] = [callback];
+          } else {
+            onCallbacks[event].push(callback);
+          }
+        },
+        emit(event, err) {
+          if (onCallbacks[event]) {
+            for (let i = 0; i < onCallbacks[event].length; i++) {
+              onCallbacks[event][i](err);
+            }
+          }
+        }
+      });
+    });
+
+    it("should emit cache errors", (done) => {
+      target.on("error", (err) => {
+        expect(err).to.be.instanceOf(Error);
+        expect(err.message).to.equal("error");
+        done();
+      });
+      target.cache.emit("error", new Error("error"));
+    });
+
+    it("should emit cache connection", (done) => {
+      target.on("connect", done);
+      target.cache.emit("connect");
     });
   });
 

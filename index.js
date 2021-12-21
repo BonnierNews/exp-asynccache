@@ -14,6 +14,10 @@ class AsyncCache extends EventEmitter {
       this.cache.on("error", (err) => {
         this.emit("error", err);
       });
+
+      this.cache.on("connect", () => {
+        this.emit("connect");
+      });
     }
   }
 
