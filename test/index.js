@@ -276,7 +276,7 @@ describe("AsyncCache", () => {
   });
 
   it("caches nothing when maxAge is -1", (done) => {
-    const LRU = require("lru-cache-plus");
+    const LRU = require("lru-cache");
     const cache = new LRU({
       maxAge: -1,
       max: 10
