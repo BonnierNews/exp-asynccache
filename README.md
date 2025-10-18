@@ -3,7 +3,7 @@ asynccache
 
 An async cache with a lookup function per key for Node.js with a different interface than async-cache.
 
-**Requirements:** Node.js 24+
+**Requirements:** Node.js 20+
 
 Errors are not cached and the callback function is always called asynchronously even if the value is resolved
 synchronously.
@@ -89,9 +89,15 @@ If the cache implementation is asynchronous, promises can be returned. The Async
 
 ## Version History
 
+### Version 3.2.1
+- Updated development dependencies (chai v6.2.0, mocha v11.7.4, eslint v9.38.0)
+- Updated GitHub Actions to use latest versions (checkout@v4, setup-node@v4, cache@v4)
+- Improved constructor interface to better handle options parameter
+- Fixed Node.js version requirements documentation to match package.json (Node.js 20+)
+
 ### Version 3.2.0
 - **BREAKING**: Upgraded to lru-cache v11 (from v6)
-- **BREAKING**: Requires Node.js 24+ (upgraded from Node.js 16)
+- **BREAKING**: Requires Node.js 20+ (upgraded from Node.js 16)
 - Updated to use modern ESLint configuration with @bonniernews/eslint-config
 - Improved error handling with proper error throwing in async methods
 - Added constructor options parameter for easier cache configuration
