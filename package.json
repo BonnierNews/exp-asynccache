@@ -9,6 +9,10 @@
     "Jens Carlén",
     "Joel Abrahamsson"
   ],
+  "engines": {
+    "node": "20 || >=22"
+  },
+  "type": "commonjs",
   "scripts": {
     "test": "mocha --reporter spec",
     "posttest": "eslint --cache ."
@@ -21,12 +25,13 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "lru-cache": "^6.0.0"
+    "lru-cache": "^11.2.2"
   },
   "devDependencies": {
-    "chai": "^4.3.4",
-    "eslint": "^8.1.0",
-    "mocha": "^9.1.3"
+    "@bonniernews/eslint-config": "^2.0.2",
+    "chai": "^6.2.0",
+    "eslint": "^9.38.0",
+    "mocha": "^11.7.4"
   },
   "files": [
     "index.js",
