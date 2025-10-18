@@ -1,3 +1,8 @@
 "use strict";
 
-module.exports = require("@bonniernews/eslint-config");
+const config = require("@bonniernews/eslint-config");
+
+module.exports = [
+  ...config,
+  { rules: { "@bonniernews/typescript-rules/disallow-class-extends": "off" } },
+];

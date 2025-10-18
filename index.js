@@ -3,7 +3,6 @@
 const { LRUCache } = require("lru-cache");
 const EventEmitter = require("events");
 
-// eslint-disable-next-line
 class AsyncCache extends EventEmitter {
   constructor(options = { }) {
     super();
