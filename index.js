@@ -1,13 +1,14 @@
 "use strict";
 
-const LRU = require("lru-cache");
+const { LRUCache } = require("lru-cache");
 const EventEmitter = require("events");
 
+// eslint-disable-next-line
 class AsyncCache extends EventEmitter {
-  constructor(cache) {
+  constructor(options = { }) {
     super();
 
-    this.cache = cache || new LRU();
+    this.cache = options.cache || new LRUCache(options);
     this.pending = {};
 
     if (typeof this.cache.on === "function") {
@@ -21,7 +22,6 @@ class AsyncCache extends EventEmitter {
     }
   }
 
-
   async get(key, callback) {
     try {
       const data = await this.cache.get(key);
@@ -33,6 +33,7 @@ class AsyncCache extends EventEmitter {
       if (typeof callback === "function") {
         return callback(err);
       }
+      throw err;
     }
   }
 
@@ -47,6 +48,7 @@ class AsyncCache extends EventEmitter {
       if (typeof callback === "function") {
         return callback(err);
       }
+      throw err;
     }
   }
 
@@ -57,7 +59,15 @@ class AsyncCache extends EventEmitter {
     }
 
     try {
-      await this.cache.set(key, value, maxAge);
+      // Check if this is a real LRUCache or a mock
+      if (this.cache.constructor.name === "LRUCache") {
+        // Real LRUCache - use options object
+        const setOptions = maxAge !== null && maxAge !== undefined ? { ttl: maxAge } : {};
+        await this.cache.set(key, value, setOptions);
+      } else {
+        // Mock cache - use traditional API
+        await this.cache.set(key, value, maxAge);
+      }
       if (typeof callback === "function") {
         return callback();
       }
@@ -65,6 +75,7 @@ class AsyncCache extends EventEmitter {
       if (typeof callback === "function") {
         return callback(err);
       }
+      throw err;
     }
   }
 
@@ -78,6 +89,7 @@ class AsyncCache extends EventEmitter {
       if (typeof callback === "function") {
         return callback(err);
       }
+      throw err;
     }
   }
 
@@ -91,12 +103,13 @@ class AsyncCache extends EventEmitter {
       if (typeof callback === "function") {
         return callback(err);
       }
+      throw err;
     }
   }
 
   lookup(key, resolveFn, hitFn) {
     const resolvedCallback = async (...args) => {
-      const [error, hit, ...rest] = args;
+      const [ error, hit, maxAge ] = args;
       if (error) {
         if (this.pending[key]) {
           this.pending[key].forEach((callback) => {
@@ -109,7 +122,15 @@ class AsyncCache extends EventEmitter {
 
       let value;
       try {
-        value = await this.cache.set(key, hit, ...rest);
+        // Handle the maxAge parameter properly
+        if (this.cache.constructor.name === "LRUCache") {
+          // Real LRUCache - use options object
+          const setOptions = maxAge !== undefined && maxAge !== null && maxAge >= 0 ? { ttl: maxAge } : {};
+          value = await this.cache.set(key, hit, setOptions);
+        } else {
+          // Mock cache - use traditional API
+          value = await this.cache.set(key, hit, maxAge);
+        }
       } catch (err) {
         this.emit("error", err);
       }
@@ -140,7 +161,7 @@ class AsyncCache extends EventEmitter {
       if (this.pending[key]) {
         this.pending[key].push(innerHitFn);
       } else {
-        this.pending[key] = [innerHitFn];
+        this.pending[key] = [ innerHitFn ];
         resolveFn(resolvedCallback);
       }
     };
