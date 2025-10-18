@@ -1,7 +1,7 @@
 {
   "name": "exp-asynccache",
   "description": " A small async cache",
-  "version": "3.2.1",
+  "version": "3.2.0",
   "author": "AB Kvällstidningen Expressen",
   "contributors": [
     "Anders Kindberg <ndrsbngtssn@yahoo.se>",
