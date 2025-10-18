@@ -48,17 +48,19 @@ By default an lru-cache v11 cache with default settings (max: 500 items) is used
 var AsyncCache = require("exp-asynccache");
 var { LRUCache } = require("lru-cache"); // any lru-cache compatible cache will do
 
-var cache = new AsyncCache(new LRUCache({
-  max: 500,
-  ttl: 1000 * 60 * 60 // Note: lru-cache v11 uses 'ttl' instead of 'maxAge'
-}));
+var cache = new AsyncCache({
+  cache: new LRUCache({
+    max: 500,
+    ttl: 1000 * 60 * 60 // Note: lru-cache v11 uses 'ttl' instead of 'maxAge'
+  })
+});
 ```
 
 You can also pass options directly to the AsyncCache constructor:
 
 ```javascript
 var AsyncCache = require("exp-asynccache");
-var cache = new AsyncCache(null, { max: 1000, ttl: 30000 });
+var cache = new AsyncCache({ max: 1000, ttl: 30000 });
 ```
 
 The resolve function can take more arguments than error and key. It will pass these to the underlying cache's set
